@@ -6,6 +6,7 @@ import DashboardScreen from "./src/screens/DashboardScreen";
 import StatsScreen from "./src/screens/StatsScreen";
 import AddHabitScreen from "./src/screens/AddHabitScreen";
 import EditHabitScreen from "./src/screens/EditHabitScreen";
+import UserGuide from "./src/screens/UserGuide";
 import { THEME } from "./theme";
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="Statistics" component={StatsScreen}  />
         <Stack.Screen name="AddHabit" component={AddHabitScreen}  />
         <Stack.Screen name="EditHabit" component={EditHabitScreen}  />
+        <Stack.Screen name="UserGuide" component={UserGuide}  />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, Pressable } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { THEME } from "../../theme";
 import Card from "../../Components/Card";
 import MiniBarChart from "../../Components/MiniBarChart";
@@ -8,6 +8,7 @@ import MiniBarChart from "../../Components/MiniBarChart";
 const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 export default function StatsScreen() {
+  const navigation = useNavigation();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,16 +41,13 @@ export default function StatsScreen() {
     const diffToMon = (day + 6) % 7; // Mon=0
     start.setDate(start.getDate() - diffToMon);
     start.setHours(0, 0, 0, 0);
-
     const counts = [0, 0, 0, 0, 0, 0, 0];
-
     habits.forEach((h) => {
       const d = new Date(String(h.date).slice(0, 10));
       d.setHours(0, 0, 0, 0);
       const idx = Math.floor((d - start) / (1000 * 60 * 60 * 24));
       if (idx >= 0 && idx <= 6) counts[idx] += 1;
     });
-
     return counts; // Mon..Sun
   }, [habits]);
 
@@ -73,13 +71,11 @@ export default function StatsScreen() {
           <Text style={{ marginLeft: 10, color: THEME.subtext, fontWeight: "800" }}>Loading…</Text>
         </View>
       ) : null}
-
       <ScrollView showsVerticalScrollIndicator={false}>
         <Card>
           <Text style={styles.bigLabel}>Green Actions Logged</Text>
           <Text style={styles.bigNumber}>{total}</Text>
           <Text style={styles.sub}>Weekly goal: 7 habits</Text>
-
           <MiniBarChart data={weekBars} />
         </Card>
 
@@ -88,7 +84,6 @@ export default function StatsScreen() {
             <Text style={styles.smallLabel}>Top Category</Text>
             <Text style={styles.smallValue}>{topCategory}</Text>
           </Card>
-
           <Card style={{ flex: 1 }}>
             <Text style={styles.smallLabel}>This Week</Text>
             <Text style={styles.smallValue}>{weekBars.reduce((a, b) => a + b, 0)}</Text>
@@ -100,11 +95,18 @@ export default function StatsScreen() {
           <Text style={styles.pillar}>Sustainable Living</Text>
           <Text style={styles.pillar}>Energy Reset</Text>
           <Text style={styles.pillar}>Green Economy (Behaviour)</Text>
-
           <Text style={styles.note}>
             Your logged habits build a sustainable mindset through consistent eco-friendly routines.
           </Text>
         </Card>
+
+        {/* User Guide Button */}
+        <Pressable
+          style={styles.guideBtn}
+          onPress={() => navigation.navigate("UserGuide")}
+        >
+          <Text style={styles.guideBtnText}>Open User Guide</Text>
+        </Pressable>
 
         <View style={{ height: 20 }} />
       </ScrollView>
@@ -115,14 +117,23 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: THEME.bg, paddingHorizontal: 16, paddingTop: 14 },
   loadingRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
-
   bigLabel: { color: THEME.subtext, fontWeight: "900", fontSize: 12 },
   bigNumber: { marginTop: 8, fontSize: 40, fontWeight: "900", color: THEME.text },
   sub: { marginTop: 2, color: THEME.subtext, fontWeight: "700" },
-
   smallLabel: { color: THEME.subtext, fontWeight: "900", fontSize: 12 },
   smallValue: { marginTop: 10, fontSize: 18, fontWeight: "900", color: THEME.text },
-
   pillar: { marginTop: 10, fontWeight: "900", color: THEME.text },
   note: { marginTop: 10, color: THEME.subtext, fontWeight: "600", lineHeight: 18 },
+  guideBtn: {
+    marginTop: 16,
+    backgroundColor: THEME.primary,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  guideBtnText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 14,
+  },
 });
