@@ -24,7 +24,7 @@ import HabitRow from "../../Components/HabitRow";
 import Chip from "../../Components/Chip";
 import WeekStrip from "../../Components/WeekStrip";
 
-const BASE_URL = "https://habit-tracker-app-y1zf.onrender.com";
+const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 // ✅ your images (keep your paths)
 const LEAVES_BG = require("../screens/assets/greenLeave.jpg");

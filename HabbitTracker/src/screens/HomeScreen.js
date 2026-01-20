@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
-const BASE_URL = "https://habit-tracker-app-y1zf.onrender.com";
+const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 // ✅ Theme (Green Plan vibe)
 const THEME = {

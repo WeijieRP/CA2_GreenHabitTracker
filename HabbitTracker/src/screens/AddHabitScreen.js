@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { THEME } from "../../theme";
 import Card from "../../Components/Card";
 
-const BASE_URL = "https://habit-tracker-app-y1zf.onrender.com";
+const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 // ✅ add images here (make sure assets folder exists)
 const LEAVES_BG = require("../screens/assets/greenLeave.jpg");

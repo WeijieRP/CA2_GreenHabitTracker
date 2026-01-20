@@ -5,7 +5,7 @@ import { THEME } from "../../theme";
 import Card from "../../Components/Card";
 import MiniBarChart from "../../Components/MiniBarChart";
 
-const BASE_URL = "https://habit-tracker-app-y1zf.onrender.com";
+const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 export default function StatsScreen() {
   const [habits, setHabits] = useState([]);
