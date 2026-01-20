@@ -2,13 +2,22 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { THEME } from "../theme";
 
-export default function ProgressRing({ value = 0, label = "goal" }) {
+export default function ProgressRing({ value = 0, label = "goal", size = 86 }) {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
+
+  const outer = size;
+  const inner = Math.round(size * 0.82);
+  const border = Math.max(6, Math.round(size * 0.08));
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.ringOuter}>
-        <View style={styles.ringInner}>
+      <View style={[styles.ringOuter, { width: outer, height: outer, borderRadius: outer / 2 }]}>
+        <View
+          style={[
+            styles.ringInner,
+            { width: inner, height: inner, borderRadius: inner / 2, borderWidth: border },
+          ]}
+        >
           <Text style={styles.big}>{pct}%</Text>
           <Text style={styles.small}>{label}</Text>
         </View>
@@ -20,18 +29,11 @@ export default function ProgressRing({ value = 0, label = "goal" }) {
 const styles = StyleSheet.create({
   wrap: { alignItems: "center", justifyContent: "center" },
   ringOuter: {
-    width: 86,
-    height: 86,
-    borderRadius: 999,
-    backgroundColor: THEME.primarySoft2,
+    backgroundColor: THEME.primarySoft2 || "#E8FFF0",
     alignItems: "center",
     justifyContent: "center",
   },
   ringInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 999,
-    borderWidth: 6,
     borderColor: THEME.primary,
     alignItems: "center",
     justifyContent: "center",

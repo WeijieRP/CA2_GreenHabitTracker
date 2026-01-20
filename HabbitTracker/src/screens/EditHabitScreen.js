@@ -1,3 +1,4 @@
+// src/screens/EditHabitScreen.js
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,8 +11,10 @@ import {
   Image,
   ImageBackground,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
 import { THEME } from "../../theme";
@@ -21,17 +24,35 @@ const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
 // ✅ same assets style as Add page
 const LEAVES_BG = require("../screens/assets/greenLeave.jpg");
-const EDIT_ILLUS = require("../screens/assets/Person1.png"); // <-- add this PNG
+const EDIT_ILLUS = require("../screens/assets/Person1.png");
+
+function toYMD(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function isoToDateObj(isoLike) {
+  // supports: "2026-01-13" or "2026-01-13T00:00:00.000Z"
+  const ymd = String(isoLike || "").slice(0, 10);
+  if (!ymd || ymd.length !== 10) return new Date();
+  const [y, m, d] = ymd.split("-");
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
 
 export default function EditHabitScreen({ navigation, route }) {
   const habit = route?.params?.habit;
 
-  // ✅ Safety fallback
+  // Safety fallback
   if (!habit) {
     return (
       <View style={[styles.fallback, { backgroundColor: THEME.bg }]}>
         <Text style={{ fontWeight: "900", color: THEME.text }}>No habit selected.</Text>
-        <Pressable style={[styles.primaryBtn, { marginTop: 12 }]} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={[styles.primaryBtn, { marginTop: 12, width: "100%" }]}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.primaryBtnText}>Go Back</Text>
         </Pressable>
       </View>
@@ -40,8 +61,13 @@ export default function EditHabitScreen({ navigation, route }) {
 
   const [title, setTitle] = useState(habit.title || "");
   const [categoryId, setCategoryId] = useState(String(habit.category_id || ""));
-  const [date, setDate] = useState(String(habit.date || "").slice(0, 10));
   const [notes, setNotes] = useState(habit.notes || "");
+
+  // ✅ Date picker state
+  const initialDateObj = isoToDateObj(habit.date);
+  const [dateObj, setDateObj] = useState(initialDateObj);
+  const [date, setDate] = useState(toYMD(initialDateObj));
+  const [showPicker, setShowPicker] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -57,6 +83,8 @@ export default function EditHabitScreen({ navigation, route }) {
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setCategories(list);
+
+      // If habit has no category_id, fallback to first category
       if (!categoryId && list.length > 0) setCategoryId(String(list[0].id));
     } catch (e) {
       console.error(e);
@@ -66,10 +94,18 @@ export default function EditHabitScreen({ navigation, route }) {
     }
   }
 
+  function onPickDate(event, selectedDate) {
+    setShowPicker(false);
+    if (!selectedDate) return; // dismissed
+
+    setDateObj(selectedDate);
+    setDate(toYMD(selectedDate));
+  }
+
   async function onUpdate() {
     if (!title.trim()) return Alert.alert("Missing", "Please enter habit title.");
     if (!categoryId) return Alert.alert("Missing", "Please choose a category.");
-    if (!date) return Alert.alert("Missing", "Please enter a date (YYYY-MM-DD).");
+    if (!date) return Alert.alert("Missing", "Please pick a date.");
 
     setSaving(true);
     try {
@@ -79,7 +115,7 @@ export default function EditHabitScreen({ navigation, route }) {
         body: JSON.stringify({
           title: title.trim(),
           category_id: Number(categoryId),
-          date,
+          date, // ✅ YYYY-MM-DD
           notes: notes.trim() || null,
         }),
       });
@@ -102,7 +138,7 @@ export default function EditHabitScreen({ navigation, route }) {
       <View style={styles.overlay} />
 
       <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
-        {/* ✅ Illustration hero header (same style as Add page) */}
+        {/* Illustration hero header */}
         <View style={styles.hero}>
           <View style={styles.heroText}>
             <Text style={styles.heroPill}>Edit Habit</Text>
@@ -118,7 +154,7 @@ export default function EditHabitScreen({ navigation, route }) {
           <Image source={EDIT_ILLUS} style={styles.heroImg} />
         </View>
 
-        {/* ✅ Form Card */}
+        {/* Form Card */}
         <Card style={styles.card}>
           <Text style={styles.title}>Edit a Green Habit</Text>
           <Text style={styles.sub}>Update the habit details below.</Text>
@@ -136,7 +172,9 @@ export default function EditHabitScreen({ navigation, route }) {
           {loadingCats ? (
             <View style={styles.row}>
               <ActivityIndicator />
-              <Text style={{ marginLeft: 10, color: THEME.subtext, fontWeight: "800" }}>Loading categories…</Text>
+              <Text style={{ marginLeft: 10, color: THEME.subtext, fontWeight: "800" }}>
+                Loading categories…
+              </Text>
             </View>
           ) : (
             <View style={styles.pickerWrap}>
@@ -148,8 +186,23 @@ export default function EditHabitScreen({ navigation, route }) {
             </View>
           )}
 
-          <Text style={styles.label}>Date (YYYY-MM-DD) *</Text>
-          <TextInput style={styles.input} value={date} onChangeText={setDate} />
+          {/* ✅ Real Date Picker */}
+          <Text style={styles.label}>Date *</Text>
+
+          <Pressable style={styles.dateField} onPress={() => setShowPicker(true)}>
+            <Ionicons name="calendar-outline" size={18} color={THEME.subtext} />
+            <Text style={styles.dateText}>{date}</Text>
+            <Ionicons name="chevron-down" size={18} color={THEME.subtext} />
+          </Pressable>
+
+          {showPicker && (
+            <DateTimePicker
+              value={dateObj}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onPickDate}
+            />
+          )}
 
           <Text style={styles.label}>Notes (optional)</Text>
           <TextInput
@@ -218,7 +271,6 @@ const styles = StyleSheet.create({
   },
   heroTitle: { marginTop: 10, fontSize: 18, fontWeight: "900", color: THEME.text },
   heroSub: { marginTop: 6, color: THEME.subtext, fontWeight: "700", lineHeight: 18 },
-
   heroImg: { width: 120, height: 140, resizeMode: "contain", alignSelf: "flex-end" },
 
   backBtn: {
@@ -262,6 +314,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
+
+  // ✅ Date field (opens picker)
+  dateField: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateText: { fontWeight: "800", color: THEME.text },
 
   primaryBtn: {
     marginTop: 16,

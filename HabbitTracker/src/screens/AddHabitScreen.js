@@ -10,8 +10,10 @@ import {
   Image,
   ImageBackground,
   ScrollView,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 
 import { THEME } from "../../theme";
@@ -19,15 +21,25 @@ import Card from "../../Components/Card";
 
 const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
 
-// ✅ add images here (make sure assets folder exists)
 const LEAVES_BG = require("../screens/assets/greenLeave.jpg");
 const ADD_ILLUS = require("../screens/assets/Illusatrton.png");
+
+function toYMD(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export default function AddHabitScreen({ navigation }) {
   const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+
+  // ✅ date picker state
+  const [dateObj, setDateObj] = useState(new Date());
+  const [date, setDate] = useState(toYMD(new Date()));
+  const [showPicker, setShowPicker] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -41,8 +53,9 @@ export default function AddHabitScreen({ navigation }) {
     try {
       const res = await fetch(`${BASE_URL}/categories`);
       const data = await res.json();
-      setCategories(Array.isArray(data) ? data : []);
-      if (Array.isArray(data) && data.length > 0) setCategoryId(String(data[0].id));
+      const list = Array.isArray(data) ? data : [];
+      setCategories(list);
+      if (list.length > 0) setCategoryId(String(list[0].id));
     } catch (e) {
       console.error(e);
       Alert.alert("Error", "Failed to load categories");
@@ -51,10 +64,18 @@ export default function AddHabitScreen({ navigation }) {
     }
   }
 
+  function onPickDate(event, selectedDate) {
+    // Android: event.type can be "dismissed"
+    setShowPicker(false);
+
+    if (!selectedDate) return; // dismissed
+    setDateObj(selectedDate);
+    setDate(toYMD(selectedDate));
+  }
+
   async function onSave() {
     if (!title.trim()) return Alert.alert("Missing", "Please enter habit title.");
     if (!categoryId) return Alert.alert("Missing", "Please choose a category.");
-    if (!date) return Alert.alert("Missing", "Please enter a date (YYYY-MM-DD).");
 
     setSaving(true);
     try {
@@ -64,7 +85,7 @@ export default function AddHabitScreen({ navigation }) {
         body: JSON.stringify({
           title: title.trim(),
           category_id: Number(categoryId),
-          date,
+          date, // ✅ YYYY-MM-DD
           notes: notes.trim() || null,
         }),
       });
@@ -87,12 +108,11 @@ export default function AddHabitScreen({ navigation }) {
       <View style={styles.overlay} />
 
       <ScrollView contentContainerStyle={styles.screen} showsVerticalScrollIndicator={false}>
-        {/* ✅ Illustration hero header */}
+        {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.heroText}>
             <Text style={styles.heroPill}>Add Habit</Text>
-            <Text style={styles.heroTitle}>Log a Green Action 
-            </Text>
+            <Text style={styles.heroTitle}>Log a Green Action 🌿</Text>
             <Text style={styles.heroSub}>
               Track sustainable behaviours aligned with Singapore Green Plan 2030.
             </Text>
@@ -106,7 +126,7 @@ export default function AddHabitScreen({ navigation }) {
           <Image source={ADD_ILLUS} style={styles.heroImg} />
         </View>
 
-        {/* ✅ Form Card */}
+        {/* Form */}
         <Card style={styles.card}>
           <Text style={styles.title}>Add a Green Habit</Text>
           <Text style={styles.sub}>Log one eco-friendly action you did today.</Text>
@@ -138,8 +158,23 @@ export default function AddHabitScreen({ navigation }) {
             </View>
           )}
 
-          <Text style={styles.label}>Date (YYYY-MM-DD) *</Text>
-          <TextInput style={styles.input} value={date} onChangeText={setDate} />
+          {/* ✅ Real Date Picker */}
+          <Text style={styles.label}>Date *</Text>
+
+          <Pressable style={styles.dateField} onPress={() => setShowPicker(true)}>
+            <Ionicons name="calendar-outline" size={18} color={THEME.subtext} />
+            <Text style={styles.dateText}>{date}</Text>
+            <Ionicons name="chevron-down" size={18} color={THEME.subtext} />
+          </Pressable>
+
+          {showPicker && (
+            <DateTimePicker
+              value={dateObj}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onPickDate}
+            />
+          )}
 
           <Text style={styles.label}>Notes (optional)</Text>
           <TextInput
@@ -168,15 +203,8 @@ export default function AddHabitScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: THEME.bg },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(244, 251, 247, 0.86)",
-  },
-
-  screen: {
-    padding: 16,
-    paddingTop: 12,
-  },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(244, 251, 247, 0.86)" },
+  screen: { padding: 16, paddingTop: 12 },
 
   hero: {
     borderRadius: 22,
@@ -209,13 +237,7 @@ const styles = StyleSheet.create({
   },
   heroTitle: { marginTop: 10, fontSize: 18, fontWeight: "900", color: THEME.text },
   heroSub: { marginTop: 6, color: THEME.subtext, fontWeight: "700", lineHeight: 18 },
-
-  heroImg: {
-    width: 120,
-    height: 140,
-    resizeMode: "contain",
-    alignSelf: "flex-end",
-  },
+  heroImg: { width: 120, height: 140, resizeMode: "contain", alignSelf: "flex-end" },
 
   backBtn: {
     marginTop: 12,
@@ -238,6 +260,7 @@ const styles = StyleSheet.create({
   sub: { marginTop: 4, color: THEME.subtext, fontWeight: "600", marginBottom: 12 },
 
   label: { fontWeight: "900", marginTop: 10, color: THEME.text },
+
   input: {
     borderWidth: 1,
     borderColor: THEME.border,
@@ -249,6 +272,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     backgroundColor: "#FFFFFF",
   },
+
   pickerWrap: {
     borderWidth: 1,
     borderColor: THEME.border,
@@ -258,6 +282,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
+
+  // ✅ Date field (looks like input but opens picker)
+  dateField: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: THEME.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateText: { fontWeight: "800", color: THEME.text },
 
   primaryBtn: {
     marginTop: 16,
