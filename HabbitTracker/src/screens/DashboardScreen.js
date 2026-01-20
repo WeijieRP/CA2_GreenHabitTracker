@@ -1,51 +1,30 @@
 import React, { useCallback, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Image,
-  ImageBackground,
-  Modal,
-} from "react-native";
+import {View, Text, StyleSheet, Pressable, FlatList, Alert, ActivityIndicator, StatusBar, ScrollView, TextInput, Image, ImageBackground, Modal} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-
 import { THEME } from "../../theme";
 import Card from "../../Components/Card";
 import ProgressRing from "../../Components/ProgressRing";
 import HabitRow from "../../Components/HabitRow";
 import Chip from "../../Components/Chip";
 import WeekStrip from "../../Components/WeekStrip";
-
 const BASE_URL = "https://ca2-greenhabittracker.onrender.com";
-
 // ✅ your images (keep your paths)
 const LEAVES_BG = require("../screens/assets/greenLeave.jpg");
 const HERO_ILLUSTRATION = require("../screens/assets/Person1.png");
-
 // ✅ add this image file for modal illustration:
 const DELETE_ILLUS = require("../screens/assets/Delete.png");
-
 export default function DashboardScreen({ navigation }) {
   const [habits, setHabits] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCat, setSelectedCat] = useState("all");
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-
   // ✅ modal states
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteTitle, setDeleteTitle] = useState("");
   const [deleting, setDeleting] = useState(false);
-
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -53,10 +32,8 @@ export default function DashboardScreen({ navigation }) {
         fetch(`${BASE_URL}/habits`),
         fetch(`${BASE_URL}/categories`),
       ]);
-
       const hData = await hRes.json();
       const cData = await cRes.json();
-
       setHabits(Array.isArray(hData) ? hData : []);
       setCategories(Array.isArray(cData) ? cData : []);
     } catch (e) {
@@ -66,13 +43,11 @@ export default function DashboardScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   useFocusEffect(
     useCallback(() => {
       loadAll();
     }, [])
   );
-
   // habits in last 7 days
   const weekCount = useMemo(() => {
     const now = new Date();
@@ -80,20 +55,15 @@ export default function DashboardScreen({ navigation }) {
       Math.floor((now - new Date(String(d).slice(0, 10))) / (1000 * 60 * 60 * 24));
     return habits.filter((h) => diffDays(h.date) >= 0 && diffDays(h.date) <= 6).length;
   }, [habits]);
-
   const weeklyGoal = 7;
   const progress = weeklyGoal ? Math.min(1, weekCount / weeklyGoal) : 0;
-
   const filteredHabits = useMemo(() => {
     const q = query.trim().toLowerCase();
-
     let list =
       selectedCat === "all"
         ? habits
         : habits.filter((h) => String(h.category_id) === String(selectedCat));
-
     if (!q) return list;
-
     return list.filter((h) => {
       const t = (h.title || "").toLowerCase();
       const n = (h.notes || "").toLowerCase();
@@ -101,18 +71,15 @@ export default function DashboardScreen({ navigation }) {
       return t.includes(q) || n.includes(q) || c.includes(q);
     });
   }, [habits, selectedCat, query]);
-
   // ✅ open custom modal instead of Alert
   const confirmDelete = (id, title) => {
     setDeleteId(id);
     setDeleteTitle(title || "");
     setDeleteOpen(true);
   };
-
   // ✅ delete + close modal
   const handleDelete = async () => {
     if (!deleteId) return;
-
     setDeleting(true);
     try {
       const res = await fetch(`${BASE_URL}/habits/${deleteId}`, { method: "DELETE" });
@@ -121,7 +88,6 @@ export default function DashboardScreen({ navigation }) {
         setDeleting(false);
         return Alert.alert("Error", data?.message || "Delete failed");
       }
-
       setDeleteOpen(false);
       setDeleteId(null);
       setDeleteTitle("");
@@ -133,14 +99,11 @@ export default function DashboardScreen({ navigation }) {
       setDeleting(false);
     }
   };
-
   return (
     <ImageBackground source={LEAVES_BG} resizeMode="cover" style={styles.bg}>
       <View style={styles.overlay} />
-
       <View style={styles.screen}>
         <StatusBar barStyle="dark-content" />
-
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
@@ -148,33 +111,15 @@ export default function DashboardScreen({ navigation }) {
               <Text style={styles.hi}>Hi, Weijie</Text>
               <Text style={styles.sub}>{weekCount} habits logged this week</Text>
             </View>
-
-          <Pressable style={styles.avatarBtn} onPress={() => navigation.navigate("Statistics")}>
-  <Image
-    source={require("../screens/assets/avatar.jpg")}
-    style={styles.avatarImg}
-  />
-</Pressable>
-
-          </View>
-
-          {/* Search row */}
-          <View style={styles.searchRow}>
-            <View style={styles.searchBox}>
-              <Ionicons name="search" size={18} color={THEME.subtext} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search habits..."
-                placeholderTextColor="#94A3B8"
-                style={styles.searchInput}
+            <Pressable style={styles.avatarBtn} onPress={() => navigation.navigate("Statistics")}>
+              <Image
+                source={require("../screens/assets/avatar.jpg")}
+                style={styles.avatarImg}
               />
-            </View>
-
-            <Pressable style={styles.filterBtn} onPress={() => navigation.navigate("Statistics")}>
-              <Ionicons name="options-outline" size={18} color="#fff" />
             </Pressable>
           </View>
+
+          {/* (Moved) Search bar - removed from here */}
 
           {/* Hero Card */}
           <View style={styles.heroCard}>
@@ -184,16 +129,13 @@ export default function DashboardScreen({ navigation }) {
               <Text style={styles.heroDesc}>
                 Weekly goal: {weeklyGoal} habits {"\n"}Logged: {weekCount}
               </Text>
-
               <View style={{ marginTop: 12, alignSelf: "flex-start" }}>
                 <ProgressRing value={progress} label="this week" />
               </View>
-
               <Pressable style={styles.heroBtn} onPress={() => navigation.navigate("AddHabit")}>
                 <Text style={styles.heroBtnText}>+ Add Habit</Text>
               </Pressable>
             </View>
-
             <Image source={HERO_ILLUSTRATION} style={styles.heroImg} />
           </View>
 
@@ -207,7 +149,6 @@ export default function DashboardScreen({ navigation }) {
               </View>
             ) : null}
           </View>
-
           <View style={styles.chipRow}>
             <Chip label="All" active={selectedCat === "all"} onPress={() => setSelectedCat("all")} />
             {categories.map((c) => (
@@ -231,6 +172,19 @@ export default function DashboardScreen({ navigation }) {
             <Pressable onPress={() => navigation.navigate("AddHabit")}>
               <Text style={styles.addLink}>+ Add</Text>
             </Pressable>
+          </View>
+          {/* 🔁 Search bar moved here, just above the list */}
+          <View style={[styles.searchRow, { marginTop: 10 }]}>
+            <View style={styles.searchBox}>
+              <Ionicons name="search" size={18} color={THEME.subtext} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search habits..."
+                placeholderTextColor="#94A3B8"
+                style={styles.searchInput}
+              />
+            </View>
           </View>
 
           <FlatList
@@ -265,12 +219,10 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.modalBackdrop}>
             <View style={styles.modalCard}>
               <Image source={DELETE_ILLUS} style={styles.modalIllus} />
-
               <Text style={styles.modalTitle}>Delete habit?</Text>
               <Text style={styles.modalText}>
                 {deleteTitle ? `Are you sure you want to delete "${deleteTitle}"?\nThis cannot be undone.` : "This cannot be undone."}
               </Text>
-
               <View style={styles.modalBtnRow}>
                 <Pressable
                   style={styles.modalCancel}
@@ -283,7 +235,6 @@ export default function DashboardScreen({ navigation }) {
                 >
                   <Text style={styles.modalCancelText}>Cancel</Text>
                 </Pressable>
-
                 <Pressable style={styles.modalDelete} onPress={handleDelete} disabled={deleting}>
                   <Text style={styles.modalDeleteText}>{deleting ? "Deleting..." : "Delete"}</Text>
                 </Pressable>
@@ -295,16 +246,13 @@ export default function DashboardScreen({ navigation }) {
     </ImageBackground>
   );
 }
-
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: THEME.bg },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(244, 251, 247, 0.86)",
   },
-
   screen: { flex: 1, paddingHorizontal: 16, paddingTop: 10 },
-
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -313,25 +261,22 @@ const styles = StyleSheet.create({
   },
   hi: { fontSize: 22, fontWeight: "900", color: THEME.text },
   sub: { marginTop: 4, fontWeight: "700", color: THEME.subtext },
-avatarBtn: {
-  width: 55,
-  height: 55,
-  borderRadius: 16,
-  backgroundColor: "#fff",
-  borderWidth: 1,
-  borderColor: THEME.border,
-  alignItems: "center",
-  justifyContent: "center",
-  overflow: "hidden", // important to clip image into rounded shape
-},
-
-avatarImg: {
-  width: 44,
-  height: 44,
-  resizeMode: "cover",
-},
-
-
+  avatarBtn: {
+    width: 55,
+    height: 55,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: THEME.border,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden", // important to clip image into rounded shape
+  },
+  avatarImg: {
+    width: 44,
+    height: 44,
+    resizeMode: "cover",
+  },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   searchBox: {
     flex: 1,
@@ -354,7 +299,6 @@ avatarImg: {
     alignItems: "center",
     justifyContent: "center",
   },
-
   heroCard: {
     marginTop: 14,
     borderRadius: 22,
@@ -389,7 +333,6 @@ avatarImg: {
     alignSelf: "flex-start",
   },
   heroBtnText: { color: "#fff", fontWeight: "900" },
-
   // ✅ fixed image style (no objectFit)
   heroImg: {
     width: 160,
@@ -398,7 +341,6 @@ avatarImg: {
     alignSelf: "center",
     marginLeft: 6,
   },
-
   sectionRow: {
     marginTop: 16,
     flexDirection: "row",
@@ -407,9 +349,7 @@ avatarImg: {
   },
   sectionTitle: { fontSize: 14, fontWeight: "900", color: THEME.text },
   addLink: { fontWeight: "900", color: THEME.subtext },
-
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
-
   primaryBtn: {
     marginTop: 12,
     backgroundColor: THEME.primary,
@@ -418,7 +358,6 @@ avatarImg: {
     alignItems: "center",
   },
   primaryBtnText: { color: "#fff", fontWeight: "900" },
-
   /* ✅ Modal styles */
   modalBackdrop: {
     flex: 1,
